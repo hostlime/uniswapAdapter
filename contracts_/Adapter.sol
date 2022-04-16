@@ -130,23 +130,21 @@ contract Adapter {
     function swapExactTokensForTokens(
     uint amountIn,
     uint amountOutMin,
-    address[] calldata path,
+    address[] calldata pathPool,
     address to,
     uint deadline
     ) external returns (uint[] memory amounts){
 
-        address pair = IUniswapV2Factory(factory).getPair(path[0], path[1]);
+        IERC20(pathPool[0]).transferFrom(msg.sender, address(this), amountIn);
+        IERC20(pathPool[0]).approve(address(router02), amountIn);
 
-        IERC20(pair).transferFrom(msg.sender, address(this), amountIn);
-        IERC20(pair).approve(address(router02), amountIn);
-
-        (amounts) = swapExactTokensForTokens(
+        (amounts) = IUniswapV2Router02(router02).swapExactTokensForTokens(
         amountIn,
         amountOutMin,
-        path,
+        pathPool,
         to,
         deadline
-        )
+        );
     }
 
 }
