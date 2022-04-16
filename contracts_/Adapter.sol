@@ -6,7 +6,39 @@ import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Factory.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "hardhat/console.sol";
 
+
+
 contract Adapter {
+    // events
+    // Emitted when swap Token cmpleted
+    event SwapTokens(
+        address indexed to,
+        uint256[] amounts,
+        address[] path
+    );
+
+    // Emitted when pair was created
+    event CreatePool(
+        address indexed tokenA, 
+        address indexed tokenB,
+        address indexed pair
+    );
+
+    // Emitted when Liquidity was added
+    event AddLiquidity(
+        address indexed to, 
+        uint256 amountTokenA, 
+        uint256 amountTokenB,
+        uint256 amountLiquidity
+    );
+
+    // Emitted when Liquidity was removed
+    event RemoveLiquidity(
+        address indexed to, 
+        uint256 amountTokenA, 
+        uint256 amountTokenB,
+        uint256 amountLiquidity
+    );
 
     address public factory;
     address public router02;
@@ -20,6 +52,8 @@ contract Adapter {
 
     function createPool(address tokenA, address tokenB) external returns(address pair) {         
         pair = IUniswapV2Factory(factory).createPair(tokenA, tokenB);
+
+        emit CreatePool(tokenA, tokenB, pair);
     }
     function getPair(address tokenA, address tokenB) external view returns (address pair){
         pair = IUniswapV2Factory(factory).getPair(tokenA, tokenB);
@@ -47,6 +81,8 @@ contract Adapter {
 
         amountTokenDesired -= amountToken;
         if(amountTokenDesired>0) IERC20(token).transfer(msg.sender, amountTokenDesired);
+
+        emit AddLiquidity(to, amountToken, amountETH, liquidity);
     }
     function removeLiquidityETH(
     address token,
@@ -69,6 +105,8 @@ contract Adapter {
             amountETHMin,
             to,
             deadline);
+
+        emit RemoveLiquidity(to, amountToken, amountETH, liquidity);
     }
 
     function addLiquidity(
@@ -103,6 +141,8 @@ contract Adapter {
 
          amountB -= _amountB;
         if(amountB>0) IERC20(tokenB).transfer(msg.sender, amountB);
+
+        emit AddLiquidity(to, amountA, _amountB, _liquidity);
     }
     function removeLiquidity(
     address tokenA,
@@ -126,6 +166,8 @@ contract Adapter {
             amountBMin,
             to,
             deadline);
+        
+        emit RemoveLiquidity(to, amountA, amountB, liquidity);
     }
     function swapExactTokensForTokens(
     uint amountIn,
@@ -138,38 +180,29 @@ contract Adapter {
         IERC20(pathPool[0]).transferFrom(msg.sender, address(this), amountIn);
         IERC20(pathPool[0]).approve(address(router02), amountIn);
 
-        (amounts) = IUniswapV2Router02(router02).swapExactTokensForTokens(
+        amounts = IUniswapV2Router02(router02).swapExactTokensForTokens(
         amountIn,
         amountOutMin,
         pathPool,
         to,
         deadline
         );
+
+        emit SwapTokens(to, amounts, pathPool);
+    }
+    function getAmountOut(uint amountIn, uint reserveIn, uint reserveOut) 
+    internal 
+    view 
+    returns (uint amountOut){
+        amountOut = IUniswapV2Router02(router02).getAmountOut(amountIn, reserveIn, reserveOut);
+    }
+    function getAmountIn(uint amountOut, uint reserveIn, uint reserveOut)
+    internal 
+    view 
+    returns (uint amountIn){
+        amountIn = IUniswapV2Router02(router02).getAmountIn(amountOut, reserveIn, reserveOut);
     }
 
-}
-
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/access/AccessControl.sol";
-
-contract Token is ERC20, AccessControl {
-
-    // Роль моста
-    bytes32 public constant BRIDGE_ROLE = keccak256("BRIDGE_ROLE");
-
-    //constructor() ERC20("MyTokenForBridge", "MTK") {}
-    constructor(string memory name, string memory symbol) ERC20(name, symbol) {
-        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        _setupRole(BRIDGE_ROLE, msg.sender);
-        _mint(msg.sender, 1000_000 * 10 ** decimals());
-    }
-
-    function mint(address to, uint256 amount) external onlyRole(BRIDGE_ROLE) {
-        _mint(to, amount);
-    }
-    function burn(address user, uint256 amount) external onlyRole(BRIDGE_ROLE) {
-        _burn(user, amount);
-    }
 }
 
 /*
