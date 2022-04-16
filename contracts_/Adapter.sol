@@ -25,8 +25,50 @@ contract Adapter {
         pair = IUniswapV2Factory(factory).getPair(tokenA, tokenB);
     }
 
-    function removePoolLiquidity() external {
+    function addLiquidityETH(
+    address token,
+    uint amountTokenDesired,
+    uint amountTokenMin,
+    uint amountETHMin,
+    address to,
+    uint deadline
+    ) external payable returns (uint amountToken, uint amountETH, uint liquidity){
+        
+        IERC20(token).transferFrom(msg.sender, address(this), amountTokenDesired);
+        IERC20(token).approve(address(router02), amountTokenDesired);
 
+        (amountToken, amountETH, liquidity) = IUniswapV2Router02(router02).addLiquidityETH{value: msg.value}(
+            token,
+            amountTokenDesired,
+            amountTokenMin,
+            amountETHMin,
+            to,
+            deadline);
+
+        amountTokenDesired -= amountToken;
+        if(amountTokenDesired>0) IERC20(token).transfer(msg.sender, amountTokenDesired);
+    }
+    function removeLiquidityETH(
+    address token,
+    uint liquidity,
+    uint amountTokenMin,
+    uint amountETHMin,
+    address to,
+    uint deadline
+    ) payable external returns (uint amountToken, uint amountETH){
+
+        address pair = IUniswapV2Factory(factory).getPair(token, IUniswapV2Router02(router02).WETH());
+        console.log(pair);
+        IERC20(pair).transferFrom(msg.sender, address(this), liquidity);
+        IERC20(pair).approve(address(router02), liquidity);
+
+        (amountToken, amountETH) = IUniswapV2Router02(router02).removeLiquidityETH(
+            token,
+            liquidity,
+            amountTokenMin,
+            amountETHMin,
+            to,
+            deadline);
     }
 
     function addLiquidity(
@@ -53,7 +95,7 @@ contract Adapter {
             amountB,
             amountAMin,
             amountBMin,
-            msg.sender,
+            to,
             deadline);
 
         amountA -= _amountA;
@@ -61,6 +103,50 @@ contract Adapter {
 
          amountB -= _amountB;
         if(amountB>0) IERC20(tokenB).transfer(msg.sender, amountB);
+    }
+    function removeLiquidity(
+    address tokenA,
+    address tokenB,
+    uint liquidity,
+    uint amountAMin,
+    uint amountBMin,
+    address to,
+    uint deadline
+    ) external returns (uint amountA, uint amountB){
+        address pair = IUniswapV2Factory(factory).getPair(tokenA, tokenB);
+        
+        IERC20(pair).transferFrom(msg.sender, address(this), liquidity);
+        IERC20(pair).approve(address(router02), liquidity);
+
+        (amountA, amountB) = IUniswapV2Router02(router02).removeLiquidity(
+            tokenA,
+            tokenB,
+            liquidity,
+            amountAMin,
+            amountBMin,
+            to,
+            deadline);
+    }
+    function swapExactTokensForTokens(
+    uint amountIn,
+    uint amountOutMin,
+    address[] calldata path,
+    address to,
+    uint deadline
+    ) external returns (uint[] memory amounts){
+
+        address pair = IUniswapV2Factory(factory).getPair(path[0], path[1]);
+
+        IERC20(pair).transferFrom(msg.sender, address(this), amountIn);
+        IERC20(pair).approve(address(router02), amountIn);
+
+        (amounts) = swapExactTokensForTokens(
+        amountIn,
+        amountOutMin,
+        path,
+        to,
+        deadline
+        )
     }
 
 }
