@@ -95,10 +95,11 @@ contract Adapter {
             to,
             deadline
         );
-
-        amountTokenDesired -= amountToken;
-        if (amountTokenDesired > 0)
-            IERC20(token).transfer(msg.sender, amountTokenDesired);
+        if (amountTokenDesired > amountToken)
+            IERC20(token).transfer(
+                msg.sender,
+                amountTokenDesired - amountToken
+            );
 
         emit AddLiquidity(to, amountToken, amountETH, liquidity);
     }
@@ -115,7 +116,7 @@ contract Adapter {
             token,
             IUniswapV2Router02(router02).WETH()
         );
-        console.log(pair);
+
         IERC20(pair).transferFrom(msg.sender, address(this), liquidity);
         IERC20(pair).approve(address(router02), liquidity);
 
@@ -128,7 +129,6 @@ contract Adapter {
                 to,
                 deadline
             );
-
         emit RemoveLiquidity(to, amountToken, amountETH, liquidity);
     }
 
@@ -167,11 +167,11 @@ contract Adapter {
                 deadline
             );
 
-        amountA -= _amountA;
-        if (amountA > 0) IERC20(tokenA).transfer(msg.sender, amountA);
+        if (amountA > _amountA)
+            IERC20(tokenA).transfer(msg.sender, amountA - _amountA);
 
-        amountB -= _amountB;
-        if (amountB > 0) IERC20(tokenB).transfer(msg.sender, amountB);
+        if (amountB > _amountB)
+            IERC20(tokenB).transfer(msg.sender, amountB - _amountB);
 
         emit AddLiquidity(to, amountA, _amountB, _liquidity);
     }

@@ -52,6 +52,7 @@
   },
   "dependencies": {
     "@hifi/flash-swap": "^1.10.0",
-    "@uniswap/v2-periphery": "^1.1.0-beta.0"
+    "@uniswap/v2-periphery": "^1.1.0-beta.0",
+    "chai-ethers-bn": "^0.0.3"
   }
 }
