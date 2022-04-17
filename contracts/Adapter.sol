@@ -3,6 +3,7 @@ pragma solidity ^0.8.4;
 
 import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
 import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Factory.sol";
+import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "hardhat/console.sol";
 
@@ -227,7 +228,7 @@ contract Adapter {
         uint256 amountIn,
         uint256 reserveIn,
         uint256 reserveOut
-    ) internal view returns (uint256 amountOut) {
+    ) external view returns (uint256 amountOut) {
         amountOut = IUniswapV2Router02(router02).getAmountOut(
             amountIn,
             reserveIn,
@@ -239,7 +240,7 @@ contract Adapter {
         uint256 amountOut,
         uint256 reserveIn,
         uint256 reserveOut
-    ) internal view returns (uint256 amountIn) {
+    ) external view returns (uint256 amountIn) {
         amountIn = IUniswapV2Router02(router02).getAmountIn(
             amountOut,
             reserveIn,
